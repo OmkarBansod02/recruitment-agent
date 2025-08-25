@@ -31,8 +31,6 @@ OPENAI_API_KEY=your-openai-api-key
 INBOX_USERNAME=recruiting-agent # Or your desired AgentMail inbox username
 WEBHOOK_URL=https://your-domain.ngrok-free.app # Your public webhook URL
 
-# The system prompt is loaded from here but can be kept in the .env for clarity
-RECRUITING_SYSTEM_PROMPT="..."
 ```
 
 ### 2. Job Data
