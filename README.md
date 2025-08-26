@@ -59,14 +59,5 @@ pip install -r requirements.txt
     python main.py
     ```
 
-2. **Expose your local server (if running locally):**
-    If you are running the server on your local machine, use a tool like Ngrok to create a public URL that forwards to your local port (e.g., port 5000).
-
-    ```sh
-    ngrok http 5000
-    ```
-
-    Update the `WEBHOOK_URL` in your `.env` file with the URL provided by Ngrok.
-
-3. **Test the Agent:**
+2. **Test the Agent:**
     Send an email to your configured agent inbox (e.g., `recruiting-agent@agentmail.to`). Introduce yourself as a job seeker and describe your skills and career interests. The agent should reply with relevant job opportunities from your `jobs.csv` file.
