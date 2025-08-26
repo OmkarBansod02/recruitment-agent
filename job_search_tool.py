@@ -3,46 +3,44 @@ import os
 from typing import List, Dict, Any
 from agents import function_tool
 
-# Load jobs data with error handling
 try:
     _jobs_df = pd.read_csv("jobs.csv") if os.path.exists("jobs.csv") else pd.DataFrame()
-    print(f"✅ Loaded {len(_jobs_df)} jobs from jobs.csv")
+    print(f"Loaded {len(_jobs_df)} jobs from jobs.csv")
 except Exception as e:
-    print(f"⚠️  Error loading jobs: {e}")
+    print(f"Error loading jobs: {e}")
     _jobs_df = pd.DataFrame()
 
 @function_tool
-def search_jobs(keywords: str = "", location: str = "", max_results: int = 5) -> List[Dict[str, Any]]:
-    """Search for jobs based on keywords and location.
+def search_jobs(keywords: str = "", location: str = "", max_results: int = 10) -> List[Dict[str, Any]]:
+    """Search for jobs based on keywords and location."""
     
-    Args:
-        keywords: Keywords to search in job titles (e.g., "python", "backend")
-        location: Location filter (e.g., "New York", "remote")
-        max_results: Maximum jobs to return (default: 5)
-    """
     if _jobs_df.empty:
         return [{"title": "No jobs available", "company": "", "location": "", "url": ""}]
     
     df = _jobs_df.copy()
     
-    # Filter by keywords
     if keywords:
-        df = df[df['job_title'].str.lower().str.contains(keywords.lower(), na=False)]
+        keyword_list = [k.strip().lower() for k in keywords.split() if k.strip()]
+        if keyword_list:
+            mask = df['job_title'].str.lower().str.contains('|'.join(keyword_list), na=False, regex=True)
+            df = df[mask]
     
-    # Filter by location
     if location:
-        df = df[df['job_location'].str.lower().str.contains(location.lower(), na=False)]
+        location_mask = df['job_location'].str.lower().str.contains(location.lower(), na=False)
+        df = df[location_mask]
     
-    # Sort by most recent if date column exists
     if 'job_posted_date' in df.columns:
         df = df.sort_values('job_posted_date', ascending=False)
     
-    # Return results with all useful fields
     results = []
     for _, row in df.head(max_results).iterrows():
+        company_name = row.get('prospect_domain', 'Unknown Company')
+        if company_name and company_name != 'Unknown Company':
+            company_name = company_name.replace('.com', '').replace('.io', '').replace('.org', '').title()
+        
         results.append({
             'title': row['job_title'],
-            'company': row.get('company', 'Company'),
+            'company': company_name,
             'location': row['job_location'],
             'url': row['job_url'],
             'posted_date': row.get('job_posted_date', 'Recently')
@@ -56,6 +54,42 @@ def get_job_categories() -> List[str]:
     if _jobs_df.empty:
         return []
     
-    # Extract unique job categories
-    categories = _jobs_df['job_title'].str.extract(r'([A-Za-z\s]+)')[0].str.strip().unique()
-    return [cat for cat in categories if cat and len(cat) > 2][:10]
+    titles = _jobs_df['job_title'].dropna().unique()
+    categories = set()
+    
+    for title in titles:
+        parts = title.replace('|', ' ').replace('-', ' ').split()
+        for part in parts:
+            part = part.strip().lower()
+            if len(part) > 2 and part not in ['all', 'levels', 'senior', 'junior', 'mid']:
+                categories.add(part.title())
+    
+    return sorted(list(categories))[:15]
+
+@function_tool
+def get_recent_jobs(max_results: int = 10) -> List[Dict[str, Any]]:
+    """Get the most recent job postings."""
+    
+    if _jobs_df.empty:
+        return [{"title": "No jobs available", "company": "", "location": "", "url": ""}]
+    
+    df = _jobs_df.copy()
+    
+    if 'job_posted_date' in df.columns:
+        df = df.sort_values('job_posted_date', ascending=False)
+    
+    results = []
+    for _, row in df.head(max_results).iterrows():
+        company_name = row.get('prospect_domain', 'Unknown Company')
+        if company_name and company_name != 'Unknown Company':
+            company_name = company_name.replace('.com', '').replace('.io', '').replace('.org', '').title()
+        
+        results.append({
+            'title': row['job_title'],
+            'company': company_name,
+            'location': row['job_location'],
+            'url': row['job_url'],
+            'posted_date': row.get('job_posted_date', 'Recently')
+        })
+    
+    return results

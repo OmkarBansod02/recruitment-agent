@@ -12,7 +12,7 @@ from flask import Flask, request, Response
 from agentmail import AgentMail
 from agentmail_toolkit.openai import AgentMailToolkit
 from agents import WebSearchTool, Agent, Runner
-from job_search_tool import search_jobs, get_job_categories
+from job_search_tool import search_jobs, get_job_categories, get_recent_jobs
 
 # Configuration
 port = int(os.getenv("PORT", 8080))
@@ -70,7 +70,7 @@ except FileNotFoundError:
 agent = Agent( 
     name="Recruiting Agent",
     instructions=instructions,
-    tools=AgentMailToolkit(client).get_tools() + [WebSearchTool(), search_jobs, get_job_categories],
+    tools=AgentMailToolkit(client).get_tools() + [WebSearchTool(), search_jobs, get_job_categories, get_recent_jobs],
 )
 
 @app.route("/", methods=["POST"]) 
